@@ -1,0 +1,15 @@
+<launch>
+  <env name="TURTLEBOT3_MODEL" value="waffle_pi"/>
+
+  <include file="$(find final_odev)/launch/start_world.launch"/>
+
+  <arg name="map_file" default="$(find final_odev)/maps/map.yaml"/>
+
+  <include file="$(find turtlebot3_navigation)/launch/turtlebot3_navigation.launch">
+    <arg name="map_file" value="$(arg map_file)"/>
+    <arg name="open_rviz" value="true"/>
+  </include>
+
+  <node pkg="rqt_image_view" type="rqt_image_view" name="rqt_image_view" args="/camera/rgb/image_raw"/>
+
+</launch>

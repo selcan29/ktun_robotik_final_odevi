@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="final_odev" type="qr_reader.py" name="qr_reader_node" output="screen"/>
+
+  <node pkg="final_odev" type="task_manager.py" name="task_manager_node" output="screen" launch-prefix="bash -c 'sleep 5; $0 $@'"/>
+</launch>
