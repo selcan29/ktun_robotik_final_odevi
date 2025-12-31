@@ -17,8 +17,6 @@ class QRReader:
         
         self.bridge = CvBridge()
         
-        # --- HAFIZA KISMI ---
-        # En son okuduğumuz QR'ı burada tutacağız
         self.last_qr_data = "" 
         
         rospy.loginfo("QR Okuyucu Baslatildi")
@@ -31,19 +29,13 @@ class QRReader:
             for obj in decoded_objects:
                 qr_data = obj.data.decode("utf-8")
                 
-                # --- AKILLI KONTROL ---
-                # Eğer okunan QR, bir öncekiyle AYNI DEĞİLSE ekrana yaz.
-                # Aynıysa sessizce sadece sisteme bildir (Publish et).
                 if qr_data != self.last_qr_data:
                     rospy.loginfo(f"QR OKUNDU: {qr_data}")
-                    self.last_qr_data = qr_data # Hafızayı güncelle
+                    self.last_qr_data = qr_data
                 
-                # Arka planda Task Manager duysun diye HER ZAMAN yayınla
-                # (Ama ekrana print basma)
                 self.qr_pub.publish(qr_data)
 
         except Exception as e:
-            # Hata mesajlarını da spam yapmasın diye logdebug kullanabiliriz ama şimdilik kalsın
             pass
 
 if __name__ == '__main__':

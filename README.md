@@ -5,7 +5,7 @@ Otonom Süpürge Robotu: QR Doğrulama ve Oda Bazlı Temizlik
 
 Ders: Robotik Giriş
 
-Dönem: 2024-2025 Güz
+Dönem: 2025-2026 Güz
 
 1. Proje Özeti
 Bu proje, ROS (Robot Operating System) Noetic üzerinde TurtleBot3 Waffle Pi robotu kullanılarak geliştirilmiş otonom bir temizlik senaryosunu içerir. Robot; önceden haritalandırılmış (SLAM) bir ev ortamında lokalizasyon (AMCL) yaparak belirlenen odaları ziyaret eder. Her oda girişinde kamera ile QR kod okuyarak doğru odada olduğunu doğrular ve oda içi temizlik rotasını (waypoint) tamamlar. Görev sonunda bir temizlik raporu oluşturur.

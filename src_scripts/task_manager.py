@@ -13,11 +13,9 @@ class TaskManager:
     def __init__(self):
         rospy.init_node('task_manager_node')
         
-        # Dosya yolları
         self.mission_file = rospy.get_param('~mission_file', '/home/ozdemir/catkin_ws/src/final_odev/config/mission.yaml')
         self.report_file = '/home/ozdemir/catkin_ws/src/final_odev/temizlik_raporu.txt'
 
-        # Hareket İstemcileri
         self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
         self.cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         
@@ -25,11 +23,9 @@ class TaskManager:
         self.client.wait_for_server()
         rospy.loginfo("Navigasyon servisi hazir!")
 
-        # QR Dinleyicisi
         self.last_qr_data = None
         rospy.Subscriber("/qr_code_read", String, self.qr_callback)
 
-        # Raporlama Defteri
         self.report = {} 
 
     def qr_callback(self, msg):
@@ -43,55 +39,34 @@ class TaskManager:
             rospy.logerr(f"Dosya okunamadi: {e}")
             return None
 
-    # --- ROBOTU HAREKET ETTIREN YARDIMCI FONKSIYON ---
     def move_robot(self, lin_x, ang_z, duration):
-        """
-        Robotu belirli bir hızda ve sürede manuel hareket ettirir.
-        lin_x: İleri/Geri hızı (Geri için eksi ver)
-        ang_z: Dönüş hızı (Sağ için eksi, Sol için artı)
-        duration: Ne kadar süre hareket edeceği
-        """
         msg = Twist()
         msg.linear.x = lin_x
         msg.angular.z = ang_z
         self.cmd_vel_pub.publish(msg)
         rospy.sleep(duration)
         
-        # Durdur
         msg.linear.x = 0.0
         msg.angular.z = 0.0
         self.cmd_vel_pub.publish(msg)
-        rospy.sleep(1.0) # Kameranın odaklanması için bekle
+        rospy.sleep(1.0) 
 
-    # --- QR KONTROL VE KURTARMA SENARYOSU (SENIN ISTEDIGIN KISIM) ---
     def smart_recovery_and_check(self, target_qr):
-        """
-        1. Önce normal bakar.
-        2. Bulamazsa GERİ gelir bakar.
-        3. Bulamazsa SAĞA döner bakar.
-        4. Bulamazsa SOLA döner bakar.
-        """
-        
-        # Adım 0: Olduğun yerde bir bak (3 saniye)
         rospy.loginfo("QR araniyor (Sabit)...")
         if self.check_qr_with_timeout(target_qr, 3.0): return True
 
-        # Adım 1: Biraz GERİ gel (-0.15 m/s hızla 1.5 saniye)
         rospy.logwarn("QR yok! 1. Hamle: Biraz GERI geliniyor...")
         self.move_robot(-0.15, 0.0, 1.5)
         if self.check_qr_with_timeout(target_qr, 2.0): return True
 
-        # Adım 2: Hafif SAĞA bak (Dönüş hızı -0.4 ile 1.5 saniye)
         rospy.logwarn("Hala yok! 2. Hamle: Hafif SAGA bakiliyor...")
         self.move_robot(0.0, -0.4, 1.5)
         if self.check_qr_with_timeout(target_qr, 2.0): return True
 
-        # Adım 3: Hafif SOLA bak (Önce ortaya gelmesi lazım, o yüzden daha uzun süre sola dönüyoruz)
         rospy.logwarn("Hala yok! 3. Hamle: Hafif SOLA bakiliyor...")
-        self.move_robot(0.0, 0.4, 3.0) # Sağa dönüşü telafi edip sola geçmek için süre uzun
+        self.move_robot(0.0, 0.4, 3.0) 
         if self.check_qr_with_timeout(target_qr, 2.0): return True
 
-        # Hepsini denedik, olmadı
         return False
 
     def check_qr_with_timeout(self, target, timeout):
@@ -158,19 +133,15 @@ class TaskManager:
             
             rospy.loginfo(f"### GOREV: {room_name.upper()} ###")
 
-            # 1. Odaya Git
             if not self.go_to_goal(entry['x'], entry['y'], entry['z'], entry['w']):
                 rospy.logerr(f"{room_name} ulaşılamadı!")
                 self.report[room_name] = "FAIL (Gidilemedi)"
                 continue
 
-            # 2. QR Kontrol (AKILLI SENARYO BURADA)
             rospy.loginfo(f"{room_name} QR kontrol ediliyor...")
-            self.last_qr_data = None # Hafızayı temizle
+            self.last_qr_data = None
             
-            # --- YENİ FONKSİYONU ÇAĞIRIYORUZ ---
             qr_found = self.smart_recovery_and_check(qr_target)
-            # -----------------------------------
 
             if qr_found:
                 rospy.loginfo(f"QR ONAYLANDI: {room_name}")
